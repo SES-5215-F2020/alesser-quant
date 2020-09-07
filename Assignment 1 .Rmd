@@ -1,19 +1,103 @@
 ---
-title: "Assignment 1 - dataset selection"
+title: "Assignment 1 - Dataset Selection"
 author: "Aron Lesser"
-date: "9/3/2020"
-output: html_document
+date: "9/6/2020"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: lumen
+    highlight: tango
+    
+  
 ---
-# level 1 title
 
-here is some text
-
-##level 2 title
-
-More text.
-
-```{r}
-2 + 2
+```{r load libraries, include=FALSE}
+library(tidycensus)
+library(tidyverse)
 ```
 
-That was the answer
+# Dataset Selection
+
+After downloading the *tidycensus* and *tidyverse* libraries, I searched through person- and household-level data to define a set of variables. Using the include=FLASE command, they will run with my program but not appear on the knit file. 
+
+
+### Loading Data
+
+
+#### Person-level data
+
+```{r}
+person_vars_2018 <- pums_variables %>%
+  distinct(year, survey, var_code, 
+           var_label, data_type, level) %>%
+  filter(level == "person", year == 2018, survey == "acs1")
+```
+
+
+#### Household-level data 
+
+```{r}
+hh_vars_2018 <- pums_variables %>%
+  distinct(year, survey, var_code, 
+           var_label, data_type, level) %>%
+  filter(level == "housing", year == 2018, survey == "acs1")
+```
+ 
+## Defining Variables
+
+I selected a dataset that may allow me to examine mobility status and moving trends among renters of hispanic origin in Georgia. In this dataset, I use seven variables. 
+
+In order to only include renters, I filtered for rent payments greater than zero. By doing so, I eliminated the housing tenure category altogether, which was in a previous draft.  
+
+*Categorical*
+
+1. **HISP**: Recoded detailed Hispanic origin
+2. **MIG**: Mobility status (lived here 1 year ago)
+3. **LANP**: Language spoken at home
+
+*Continuous*
+
+4. **PINCP**: Income
+5. **NP**: Number of persons in this household
+6. **AGEP**: Age
+7. **RNTP**: Monthly rent 
+
+## Downloading the data
+
+I downloaded the data using the following code: 
+
+```{r, message=FALSE, results='hide'}
+person_data <- get_pums(variables = c("HISP", 
+                                      "MIG", 
+                                      "LANP", 
+                                      "PINCP",
+                                      "NP",
+                                      "AGEP",
+                                      "RNTP"),
+                        state = "GA", 
+                        year = 2018, 
+                        survey = "acs1",
+                        recode = TRUE) %>%
+  filter(RNTP > 0) %>%
+  select(HISP_label, MIG_label, LANP, PINCP, NP, RNTP, AGEP)
+```
+
+
+# Finalizing and Writing
+
+### First 10 Observations
+
+Below are the first 10 observations of the dataset
+```{r} 
+person_data
+```
+
+
+### Writing a CSV File
+
+This is the code that I used to write it into a .csv file: 
+
+```{r}
+write_csv(person_data, "people.csv")
+```
