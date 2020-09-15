@@ -1,0 +1,340 @@
+---
+title: "Quant assignment 2"
+author: "Aron Lesser"
+date: "9/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load libraries, include=FALSE}
+library(tidycensus)
+library(tidyverse)
+library(ggplot2)
+library(scales)
+library(ggthemes)
+```
+
+# Loading Data
+
+I begin by loading the data, filtering income to be greater than 0. 
+
+```{r}
+person_data <- read_csv("people.csv")%>%
+  filter(PINCP > 0)
+attach(person_data)
+```
+
+# Variables
+
+For this assignment, I will use 5 variables:  
+
+*Categorical*
+
+1. **HISP**: Recoded detailed Hispanic origin
+2. **MIG**: Mobility status (lived here 1 year ago)
+
+*Continuous*
+
+3. **PINCP**: Income
+4. **NP**: Number of persons in this household
+5. **RNTP**: Monthly rent 
+
+I decided to exclude primary language spoken at home and age because I did not feel that they will add to my analysis moving forward. 
+
+## Continuous Variables 
+
+### Monthly Rent, Income, and Number of Persons in the Household
+
+Using the summary function, I calculate the Median, Mean, and the 1st and 3rd quartiles. 
+```{r}
+summary(RNTP)
+
+summary(PINCP)
+
+summary(NP)
+```
+
+I then calculate the standard deviation for each variable
+```{r}
+sd(RNTP)
+sd(PINCP)
+sd(NP)
+```
+
+And run a T test to get the 95% confidence interval of each
+
+T test Rent
+
+```{r}
+pop_mean <- t.test(RNTP)
+
+pop_mean
+```
+
+
+T test Income
+
+```{r}
+pop_mean <- t.test(PINCP)
+
+pop_mean
+```
+
+T test Number of Persons in Household
+
+
+```{r}
+pop_mean <- t.test(NP)
+
+pop_mean
+```
+
+
+### Representing the Data on Histograms
+
+Finally, I create histograms representing each continuous variables on the X axis and the number of people in the sample on the Y axis. I export it to pdf in order to use it in my submission InDesign Submission. 
+
+#### Rent
+
+```{r}
+pdf("Rent_People_Sample.pdf", width = 3, height = 3) 
+
+hist <- ggplot(person_data, aes(x = RNTP)) +
+  geom_histogram() 
+
+hist + 
+  theme_tufte() +
+  scale_x_continuous(name = "Amount spent on rent", limits = c(0, 3000)) +
+  scale_y_continuous(name = "Number of people in sample")
+dev.off()
+```
+
+#### Income
+```{r}
+pdf("income_People_Sample.pdf", width = 3.5, height = 3) 
+hist <- ggplot(person_data, aes(x = PINCP)) +
+  geom_histogram(bins = 20) 
+
+hist + 
+  theme_tufte() +
+scale_x_continuous((name = "Income"), label = comma, limits = c(-0, 300000))+
+  scale_y_continuous(name = "Number of people in sample")
+dev.off()
+
+
+```
+
+
+#### Number of People in Household
+
+```{r}
+pdf("NP_household_histogram.pdf", width = 3, height = 3) 
+   
+
+hist <- ggplot(person_data, aes(x = NP)) +
+  geom_histogram(bins=12) 
+
+hist + 
+  theme_tufte() +
+  scale_x_continuous(name = "Number of people in each household", limits = c(0,12), breaks = c(1,3,5,7,9,11)) +
+  scale_y_continuous(name = "Number of people in sample")
+
+dev.off()
+
+
+```
+
+
+
+
+
+## Categorical Variables
+
+### Mobility
+
+I begin by displaying the categories for Mobility 
+
+```{r}
+mobility <- unique(MIG_label)
+
+mobility
+```
+
+The I get the share of the sample in each category
+```{r}
+different_us <- t.test(MIG_label == mobility[1])
+nonmovers <- t.test(MIG_label == mobility[2])
+different_international <- t.test(MIG_label == mobility[3])
+
+
+
+shares <- tibble(mobility = c("different_us", 
+                            "nonmovers", 
+                            "different_international"),
+                 `Share` = c(different_us$estimate, 
+                            nonmovers$estimate, 
+                            different_international$estimate),
+                 Low = c(different_us$conf.int[1], 
+                            nonmovers$conf.int[1], 
+                            different_international$conf.int[1]),
+                 High = c(different_us$conf.int[2], 
+                            nonmovers$conf.int[2], 
+                            different_international$conf.int[2]))
+shares
+```
+I also illustrated the results on a bar chart, just to familiarize myself with this type of visualization
+
+```{r}
+ggplot(shares, aes(x = mobility, y = Share, ymin = Low, ymax = High)) +
+  geom_bar(stat = "identity") +
+  geom_errorbar(width = 0.5) +
+  theme_bw() +
+  scale_y_continuous(name = "Share of population (error bars represent\n 95-percent confidence interval)",
+                     breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8),
+                     labels = c("0", "10%", "20%", "30%", "40%", "50%", "60%", "70", "80"))
+```
+
+### Ethnicity of Hispanic Origin
+
+I repet the process to look at the label categories for Hispanic Origin
+
+```{r}
+h_origin <- unique(HISP_label)
+
+h_origin
+```
+
+I then get the share of the sample in each category
+
+```{r}
+Not_Spanish_Hispanic_Latino <- t.test(HISP_label == h_origin[1])
+Dominican <- t.test(HISP_label == h_origin[2])
+Guatemalan <- t.test(HISP_label == h_origin[3])
+Mexican <-  t.test(HISP_label == h_origin[4])
+Salvadoran <-  t.test(HISP_label == h_origin[5])
+Ecuadorian <-  t.test(HISP_label == h_origin[6])
+Puerto_Rican <-  t.test(HISP_label == h_origin[7])
+All_other_latino <-  t.test(HISP_label == h_origin[8])
+Colombian <-  t.test(HISP_label == h_origin[9])
+Panamanian <-  t.test(HISP_label == h_origin[10])
+Cuban <-  t.test(HISP_label == h_origin[11])
+Honduran <-  t.test(HISP_label == h_origin[12])
+Peruvian <-  t.test(HISP_label == h_origin[13])
+Spaniard <-  t.test(HISP_label == h_origin[14])
+Venezuelan <-  t.test(HISP_label == h_origin[15])
+Uruguayan <-  t.test(HISP_label == h_origin[16])
+Nicaraguan <-  t.test(HISP_label == h_origin[17])
+Costa_Rican <-  t.test(HISP_label == h_origin[18])
+Other_Central_American <-  t.test(HISP_label == h_origin[19])
+Argentinian <-  t.test(HISP_label == h_origin[20])
+Chilean <-  t.test(HISP_label == h_origin[21])
+Paraguayan <-  t.test(HISP_label == h_origin[22])
+Other_South_America <-  t.test(HISP_label == h_origin[23])
+
+
+shares <- tibble(h_origin = c("Not_Spanish_Hispanic_Latino",
+                              "Dominican",
+                              "Guatemalan",
+                              "Mexican",
+                              "Salvadoran",
+                              "Ecuadorian",
+                              "Puerto_Rican", 
+                              "All_other_latino", 
+                              "Colombian",
+                              "Panamanian",
+                              "Cuban",
+                              "Honduran",
+                              "Peruvian",
+                              "Spaniard",
+                              "Venezuelan",
+                              "Uruguayan",
+                              "Nicaraguan", 
+                              "Costa_Rican",
+                              "Other_Central_American",
+                              "Argentinian",
+                              "Chilean",
+                              "Paraguayan", 
+                              "Other_South_America"),
+                 
+                 `Share` = c(Not_Spanish_Hispanic_Latino$estimate,
+                               Dominican$estimate,
+                               Guatemalan$estimate, 
+                               Mexican$estimate,
+                               Salvadoran$estimate, 
+                               Ecuadorian$estimate, 
+                               Puerto_Rican$estimate, 
+                               All_other_latino$estimate, 
+                               Colombian$estimate, 
+                               Panamanian$estimate, 
+                               Cuban$estimate, 
+                               Honduran$estimate,
+                               Peruvian$estimate, 
+                               Spaniard$estimate, 
+                               Venezuelan$estimate, 
+                               Uruguayan$estimate, 
+                               Nicaraguan$estimate, 
+                               Costa_Rican$estimate, 
+                               Other_Central_American$estimate, 
+                               Argentinian$estimate, 
+                               Chilean$estimate,
+                               Paraguayan$estimate,
+                               Other_South_America$estimate),
+                 
+                 Low = c(Not_Spanish_Hispanic_Latino$conf.int[1],
+                               Dominican$conf.int[1],
+                               Guatemalan$conf.int[1],
+                               Mexican$conf.int[1],
+                               Salvadoran$conf.int[1],
+                               Ecuadorian$conf.int[1],
+                               Puerto_Rican$conf.int[1],
+                               All_other_latino$conf.int[1],
+                               Colombian$conf.int[1],
+                               Panamanian$conf.int[1],
+                               Cuban$conf.int[1],
+                               Honduran$conf.int[1],
+                               Peruvian$conf.int[1],
+                               Spaniard$conf.int[1],
+                               Venezuelan$conf.int[1],
+                               Uruguayan$conf.int[1],
+                               Nicaraguan$conf.int[1],
+                               Costa_Rican$conf.int[1],
+                               Other_Central_American$conf.int[1],
+                               Argentinian$conf.int[1],
+                               Chilean$conf.int[1],
+                               Paraguayan$conf.int[1],
+                               Other_South_America$conf.int[1]),
+                 
+                 High = c(Not_Spanish_Hispanic_Latino$conf.int[2],
+                               Dominican$conf.int[2],
+                               Guatemalan$conf.int[2],
+                               Mexican$conf.int[2],
+                               Salvadoran$conf.int[2],
+                               Ecuadorian$conf.int[2],
+                               Puerto_Rican$conf.int[2],
+                               All_other_latino$conf.int[2],
+                               Colombian$conf.int[2],
+                               Panamanian$conf.int[2],
+                               Cuban$conf.int[2],
+                               Honduran$conf.int[2],
+                               Peruvian$conf.int[2],
+                               Spaniard$conf.int[2],
+                               Venezuelan$conf.int[2],
+                               Uruguayan$conf.int[2],
+                               Nicaraguan$conf.int[2],
+                               Costa_Rican$conf.int[2],
+                               Other_Central_American$conf.int[2],
+                               Argentinian$conf.int[2],
+                               Chilean$conf.int[2],
+                               Paraguayan$conf.int[2],
+                               Other_South_America$conf.int[2]))
+shares
+```
+
+
+# Finalizing the Submisison
+
+To finalize the submission, I transfer the data to my InDesign layout and link the histograms. I include my discussion questions and reflections on the data in the final pdf submission. 
+
