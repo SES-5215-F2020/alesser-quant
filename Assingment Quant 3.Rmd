@@ -1,0 +1,526 @@
+---
+title: "Quant Assignment 3"
+author: "Aron Lesser"
+date: "9/22/2020"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: lumen
+    highlight: tango
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load libraries, include=FALSE}
+library(tidycensus)
+library(tidyverse)
+library(ggplot2)
+library(scales)
+library(ggthemes)
+```
+
+
+# Loading Data
+
+I begin by loading the data and filtering income to be greater than 0. I also altered the ethnicity category to only include Hispanic/Not Hispanic.
+
+```{r}
+new_person_data <- read_csv("people.csv")%>%
+   filter(PINCP > 0)%>%
+  mutate(HISP_label = case_when(
+    HISP_label == "Not Spanish/Hispanic/Latino" ~ "Non Hispanic",
+    HISP_label ==                          "Dominican" ~ "Hispanic",
+    HISP_label ==                          "Guatemalan" ~ "Hispanic",
+    HISP_label ==                          "Mexican" ~ "Hispanic",
+    HISP_label ==                          "Salvadoran" ~ "Hispanic",
+    HISP_label ==                          "Ecuadorian" ~ "Hispanic",
+    HISP_label ==                          "Puerto Rican" ~ "Hispanic", 
+    HISP_label ==                          "All Other Spanish/Hispanic/Latino" ~ "Hispanic", 
+    HISP_label ==                          "Colombian" ~ "Hispanic",
+    HISP_label ==                          "Panamanian" ~ "Hispanic",
+    HISP_label ==                          "Cuban" ~ "Hispanic",
+    HISP_label ==                          "Honduran" ~ "Hispanic",
+    HISP_label ==                          "Peruvian" ~ "Hispanic",
+    HISP_label ==                          "Spaniard" ~ "Hispanic",
+    HISP_label ==                          "Venezuelan" ~ "Hispanic",
+    HISP_label ==                          "Uruguayan" ~ "Hispanic",
+    HISP_label ==                          "Nicaraguan" ~ "Hispanic", 
+    HISP_label ==                          "Costa Rican" ~ "Hispanic",
+    HISP_label ==                          "Other Central American" ~ "Hispanic",
+    HISP_label ==                          "Argentinean" ~ "Hispanic",
+    HISP_label ==                          "Chilean" ~ "Hispanic",
+    HISP_label ==                          "Paraguayan" ~ "Hispanic", 
+    HISP_label ==                          "Other South American" ~ "Hispanic"))
+  attach(new_person_data)
+```
+
+# Variables
+
+For this assignment, I will use 5 variables:  
+
+*Categorical*
+
+1. **HISP**: Altered to include only Hispanic and Non-Hispanic
+2. **MIG**: Mobility status (lived here 1 year ago)
+
+
+*Continuous*
+
+3. **PINCP**: Income
+4. **NP**: Number of persons in this household
+5. **RNTP**: Monthly rent 
+
+
+# Relationships Between Two Continuous Variables
+
+## Correlation between Income and Rent  
+```{r}
+correlation <- cor.test(new_person_data$PINCP, new_person_data$RNTP)
+
+correlation
+```
+
+I was expecting to see a stronger correlation betweeen income and rent, which is only .3 
+
+### Plotting Income and Rent 
+
+```{r}
+ggplot(new_person_data, aes(x = PINCP, y = RNTP)) +
+  geom_point(size = 0.5, alpha = 0.25, position = "jitter") +
+  geom_smooth() +
+  theme_minimal() +
+  scale_x_continuous(name = "Income", label = comma) +
+  scale_y_continuous(name = "Monthly rent", 
+                     breaks = seq(0, 4000, by = 500),
+                     labels = paste("$", 
+                                    prettyNum(seq(0, 4000, by = 500),
+                                              big.mark = ","))) +
+  annotate(geom = "text", x = 0, y = 4000, 
+           label = paste("Correlation (95-percent confidence):",
+                         prettyNum(correlation$conf.int[1], digits = 2), 
+                         "to",
+                         prettyNum(correlation$conf.int[2], digits = 2)),
+           hjust = 0)
+```
+
+### Testing Income and Rent at a max income  of $100,000
+
+It appeared that there may be a slightly different correlation strength among people in the sample that earn $100,000 or less. I created a new dataset to test this hypothesis. 
+
+```{r}
+new_person_data_1 <- read_csv("people.csv") %>%
+   filter(PINCP > 0, PINCP < 100000) %>%
+  mutate(HISP_label = case_when(
+    HISP_label == "Not Spanish/Hispanic/Latino" ~ "Non Hispanic",
+    HISP_label ==                          "Dominican" ~ "Hispanic",
+    HISP_label ==                          "Guatemalan" ~ "Hispanic",
+    HISP_label ==                          "Mexican" ~ "Hispanic",
+    HISP_label ==                          "Salvadoran" ~ "Hispanic",
+    HISP_label ==                          "Ecuadorian" ~ "Hispanic",
+    HISP_label ==                          "Puerto Rican" ~ "Hispanic", 
+    HISP_label ==                          "All Other Spanish/Hispanic/Latino" ~ "Hispanic", 
+    HISP_label ==                          "Colombian" ~ "Hispanic",
+    HISP_label ==                          "Panamanian" ~ "Hispanic",
+    HISP_label ==                          "Cuban" ~ "Hispanic",
+    HISP_label ==                          "Honduran" ~ "Hispanic",
+    HISP_label ==                          "Peruvian" ~ "Hispanic",
+    HISP_label ==                          "Spaniard" ~ "Hispanic",
+    HISP_label ==                          "Venezuelan" ~ "Hispanic",
+    HISP_label ==                          "Uruguayan" ~ "Hispanic",
+    HISP_label ==                          "Nicaraguan" ~ "Hispanic", 
+    HISP_label ==                          "Costa Rican" ~ "Hispanic",
+    HISP_label ==                          "Other Central American" ~ "Hispanic",
+    HISP_label ==                          "Argentinean" ~ "Hispanic",
+    HISP_label ==                          "Chilean" ~ "Hispanic",
+    HISP_label ==                          "Paraguayan" ~ "Hispanic", 
+    HISP_label ==                          "Other South American" ~ "Hispanic"))
+  attach(new_person_data_1)
+```
+
+### Correlation between 100k income and rent
+
+As it turns out, it is not significantly different than above. I will need to think about some possible explanations. It is clear that there are more renters in lower income brackets. 
+
+```{r}
+correlation <- cor.test(new_person_data_1$PINCP, new_person_data_1$RNTP)
+
+correlation
+```
+
+
+### Plotting 100k Income and Rent 
+
+
+```{r}
+ggplot(new_person_data_1, aes(x = PINCP, y = RNTP)) +
+  geom_point(size = 0.5, alpha = 0.25, position = "jitter") +
+  geom_smooth() +
+  theme_minimal() +
+  scale_x_continuous(name = "Income", label = comma) +
+  scale_y_continuous(name = "Monthly rent", 
+                     breaks = seq(0, 4000, by = 500),
+                     labels = paste("$", 
+                                    prettyNum(seq(0, 4000, by = 500),
+                                              big.mark = ","))) +
+  annotate(geom = "text", x = 0, y = 4000, 
+           label = paste("Correlation (95-percent confidence):",
+                         prettyNum(correlation$conf.int[1], digits = 2), 
+                         "to",
+                         prettyNum(correlation$conf.int[2], digits = 2)),
+           hjust = 0)
+```
+
+
+
+## Correlation between Household Size and Rent  
+```{r}
+correlation <- cor.test(new_person_data$NP, new_person_data$RNTP)
+
+correlation
+```
+There is an extremely modest correlation between household size and monthly rent. 
+
+### Plotting Household Size and Rent 
+
+```{r}
+ggplot(new_person_data, aes(x = NP, y = RNTP)) +
+  geom_point(size = 0.5, alpha = 0.25, position = "jitter") +
+  geom_smooth() +
+  theme_bw() +
+  scale_x_continuous(name = "Household Size", limits = c(1,12), seq(1, 12, by = 2)) +
+  scale_y_continuous(name = "Monthly rent", 
+                     breaks = seq(0, 4000, by = 500),
+                     labels = paste("$", 
+                                    prettyNum(seq(0, 4000, by = 500),
+                                              big.mark = ","))) +
+  annotate(geom = "text", x = 1, y = 3500, 
+           label = paste("Correlation (95-percent confidence):",
+                         prettyNum(correlation$conf.int[1], digits = 2), 
+                         "to",
+                         prettyNum(correlation$conf.int[2], digits = 2)),
+           hjust = 0)
+```
+
+## Correlation between Household Size and Income  
+```{r}
+correlation <- cor.test(new_person_data$NP, new_person_data$PINCP)
+
+correlation
+```
+
+This is again an interesting case in which there seems to be a very weak correlation between household size and income. 
+
+### Plotting Household Size and Income 
+
+```{r}
+
+options(scipen=999)
+
+ggplot(new_person_data, aes(x = NP, y = PINCP)) +
+  geom_point(size = 0.5, alpha = 0.25, position = "jitter") +
+  geom_smooth() +
+  theme_bw() +
+  scale_x_continuous(name = "Household Size", limits = c(1,12), seq(1, 12, by = 2)) +
+  scale_y_continuous(name = "Income",
+                     breaks = seq(0, 600000, by = 50000),
+                     labels = paste("$", 
+                                    prettyNum(seq(0, 600000, by = 50000),
+                                              big.mark = ","))) +
+  annotate(geom = "text", x = 1, y = 600000, 
+           label = paste("Correlation (95-percent confidence):",
+                         prettyNum(correlation$conf.int[1], digits = 2), 
+                         "to",
+                         prettyNum(correlation$conf.int[2], digits = 2)),
+           hjust = 0)
+```
+
+# Relationships between a Continuous Variable and a Binary Categorical One - Ethnicity 
+
+## Ethnicity and Income
+
+```{r}
+difference = t.test(PINCP ~ HISP_label == "Hispanic",
+                    data = new_person_data)
+
+difference
+```
+
+There appears to be a statistically significant relationship between ethnicity and income. In this case, the mean income among Hispanics is nearly 10% higher than that of non-Hispanics. 
+
+### Plotting Ethnicity and Income
+
+```{r}
+options(scipen=999)
+
+ggplot(new_person_data, aes(x = HISP_label, y = PINCP)) +
+  geom_violin() +
+  theme_bw() +
+  scale_x_discrete(name = "Ethnicity",
+                   labels = c("Hispanic", "Non-Hispanic")) +
+   scale_y_continuous(name = "Income", 
+                     breaks = seq(0, 600000, by = 50000),
+                     labels = paste("$", 
+                                    prettyNum(seq(0, 600000, by = 50000),
+                                              big.mark = ","))) +
+  annotate(geom = "text", x = 1.5, y = 250000, size = 3,
+           label = paste("Difference in means\n(95% confidence):\n$",
+                         prettyNum(abs(difference$conf.int[2]), 
+                                   digits = 0), " to $",
+                         prettyNum(abs(difference$conf.int[1]), 
+                                   digits = 0),
+                         sep = "")) +
+  annotate(geom = "text", x = 1, y = 26000, size = 2,
+           label = paste("Mean (95% confidence):\n$",
+                         prettyNum(difference$estimate[1], digits = 0))) +
+  annotate(geom = "text", x = 2, y = 26000, size = 2,
+           label = paste("Mean (95% confidence):\n$",
+                         prettyNum(difference$estimate[2], digits = 0)))
+```
+
+
+## Ethnicity and Rent
+
+```{r}
+difference = t.test(RNTP ~ HISP_label == "Hispanic",
+                    data = new_person_data)
+
+difference
+```
+
+Interestingly, while Hispanics in this sample on average make more than non-Hispanics, Hispanics pay on average ~10% less rent than non-Hispanics. The t-test suggests that this is a statistically significant relationship.  
+
+### Plotting Ethnicity and Rent
+
+```{r}
+ggplot(new_person_data, aes(x = HISP_label, y = RNTP)) +
+  geom_violin() +
+  theme_bw() +
+  scale_x_discrete(name = "Ethnicity",
+                   labels = c("Hispanic", "Non-Hispanic")) +
+   scale_y_continuous(name = "Rent", 
+                     breaks = seq(0, 4000, by = 500),
+                     labels = paste("$", 
+                                    prettyNum(seq(0, 4000, by = 500),
+                                              big.mark = ","))) +
+  annotate(geom = "text", x = 1.5, y = 2500, size = 3,
+           label = paste("Difference in means\n(95% confidence):\n$",
+                         prettyNum(abs(difference$conf.int[2]), 
+                                   digits = 0), " to $",
+                         prettyNum(abs(difference$conf.int[1]), 
+                                   digits = 0),
+                         sep = "")) +
+  annotate(geom = "text", x = 1, y = difference$estimate[1], size = 3,
+           label = paste("Mean (95% confidence):\n$",
+                         prettyNum(difference$estimate[1], digits = 0))) +
+  annotate(geom = "text", x = 2, y = difference$estimate[2], size = 3,
+           label = paste("Mean (95% confidence):\n$",
+                         prettyNum(difference$estimate[2], digits = 0)))
+```
+
+
+
+## Ethnicity and Household Size
+
+```{r}
+difference = t.test(NP ~ HISP_label == "Hispanic",
+                    data = new_person_data)
+
+difference
+```
+It appears that there is a statistically significant relationship between ethnicity and household size. In this case, non-Hispanics households are on average 1 person greater than their Hispanic counterparts. 
+
+
+### Plotting Ethnicity and Household Size
+
+```{r}
+ggplot(new_person_data, aes(x = HISP_label, y = NP)) +
+  geom_violin() +
+  theme_bw() +
+  scale_x_discrete(name = "Ethnicity",
+                   labels = c("Hispanic", "Non-Hispanic")) +
+   scale_y_continuous(name = "Household Size", 
+                     breaks = seq(1, 12, by = 1),
+                     labels = paste(
+                                    prettyNum(seq(1, 12, by = 1),
+                                              big.mark = ","))) +
+  annotate(geom = "text", x = 1.5, y = 8, size = 3,
+           label = paste("Difference in means\n(95% confidence):\n",
+                         prettyNum(abs(difference$conf.int[2]), 
+                                   digits = 0),
+                         prettyNum(abs(difference$conf.int[1]), 
+                                   digits = 0),
+                         sep = "")) +
+  annotate(geom = "text", x = .6, y = difference$estimate[1], size = 2,
+           label = paste("Mean (95% confidence):\n",
+                         prettyNum(difference$estimate[1], digits = 0))) +
+  annotate(geom = "text", x = 2.4, y = difference$estimate[2], size = 2,
+           label = paste("Mean (95% confidence):\n",
+                         prettyNum(difference$estimate[2], digits = 0)))
+```
+
+
+I realize that in plotting this on a graph, the difference in means comes out as 11. I do not understand why this is happening, to be honest, since the 95% confidence interval is -1 to -.08. Could it be the negatives? 
+
+
+# Relationships between a Continuous Variable and a Non-Binary Categorical One - Mobility Status
+
+## Anova Mobility Status and Rent
+
+```{r}
+anova <- aov(RNTP ~ MIG_label, data = new_person_data)
+
+summary(anova)
+```
+
+There appears to be a statistically significant relationship between the variables. 
+
+### Tukey's Honestly Significant Difference - Mobility Status and Rent
+
+```{r}
+differences <- TukeyHSD(anova)
+
+as_tibble(cbind(pair = row.names(differences$MIG_label),
+                differences$MIG_label))
+```
+
+### Plotting Mobility Status and Rent
+
+In this case, I found a boxplot to be more effective than a violin plot. 
+
+```{r}
+ggplot(new_person_data, aes(x = MIG_label, y = RNTP)) +
+  geom_boxplot() +
+  theme_bw() +
+  scale_x_discrete(name = "Mobility Status",
+   labels = c("Moved within U.S.", "Moved Internationally", "Did Not Move")) +
+  scale_y_continuous(name = "Rent", 
+                     breaks = seq(0, 4000, by = 500),
+                     labels = paste("$", 
+                                    prettyNum(seq(0, 4000, by = 500),
+                                              big.mark = ","))) 
+```
+
+
+In this boxplot we can see differences in medians and interquartile ranges. 
+
+## Anova Mobility Status and Income
+
+```{r}
+anova <- aov(PINCP ~ MIG_label, data = new_person_data)
+
+summary(anova)
+```
+
+
+While there is a statistically significant relationship, the p value is much lower among these variables than the previous ones. 
+
+### Tukey's Honestly Significant Difference - Mobility Status and Income
+
+```{r}
+differences <- TukeyHSD(anova)
+
+as_tibble(cbind(pair = row.names(differences$MIG_label),
+                differences$MIG_label))
+```
+
+### Plotting Mobility Status and Income
+
+
+```{r}
+ggplot(new_person_data, aes(x = MIG_label, y = PINCP)) +
+  geom_violin() +
+  theme_bw() +
+  scale_x_discrete(name = "Mobility Status",
+   labels = c("Moved within U.S.", "Moved Internationally", "Did Not Move")) +
+  scale_y_continuous(name = "Income", 
+                     breaks = seq(0, 600000, by = 50000),
+                     labels = paste("$", 
+                                    prettyNum(seq(0, 600000, by = 50000),
+                                              big.mark = ","))) 
+```
+
+## Anova Mobility Status and Household Size
+
+```{r}
+anova <- aov(NP ~ MIG_label, data = new_person_data)
+
+summary(anova)
+```
+
+### Tukey's Honestly Significant Difference - Mobility Status and Household Size
+
+```{r}
+differences <- TukeyHSD(anova)
+
+as_tibble(cbind(pair = row.names(differences$MIG_label),
+                differences$MIG_label))
+```
+
+### Plotting Mobility Status and Household Size
+
+
+```{r}
+ggplot(new_person_data, aes(x = MIG_label, y = NP)) +
+  geom_violin() +
+  theme_bw() +
+  scale_x_discrete(name = "Mobility Status",
+   labels = c("Moved within U.S.", "Moved Internationally", "Did Not Move")) +
+  scale_y_continuous(name = "Household Size", 
+                     breaks = seq(1, 12, by = 1),
+                     labels = paste(
+                                    prettyNum(seq(1, 12, by = 1),
+                                              big.mark = ",")))
+```
+
+
+# Two Categorial Variables - Mobility Status and Ethnicity
+
+## Hispanic Ethnicity and Mobility Status
+
+```{r}
+chi_sq <- chisq.test(new_person_data$MIG_label, new_person_data$HISP_label == 
+                       "Hispanic") 
+
+chi_sq
+```
+
+In running a Chi-squared test, it appears that there is a statistically significant relationship between ethnicity and mobility status, both for Hispanics and non-Hispanics. However, I would like to better understand how to interpret the results. 
+
+Observed
+
+```{r}
+chi_sq$observed
+```
+
+Expected
+
+```{r}
+chi_sq$expected
+```
+
+## Non-Hispanic Ethnicity and Mobility Status
+
+```{r}
+chi_sq <- chisq.test(new_person_data$MIG_label, new_person_data$HISP_label == 
+                       "Non Hispanic") 
+
+chi_sq
+```
+
+There also appears to be a statistically significant relationship between the variables of non-Hispanic Ethnicity and mobility status. 
+
+Observed
+
+```{r}
+chi_sq$observed
+```
+
+Expected
+
+```{r}
+chi_sq$expected
+```
