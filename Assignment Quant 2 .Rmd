@@ -17,6 +17,8 @@ library(scales)
 library(ggthemes)
 ```
 
+Test change
+
 # Loading Data
 
 I begin by loading the data, filtering income to be greater than 0. 
