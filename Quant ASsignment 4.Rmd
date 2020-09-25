@@ -1,0 +1,80 @@
+---
+title: "Quant Assignment 4"
+author: "Aron Lesser"
+date: "9/24/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r load libraries, include=FALSE}
+library(tidycensus)
+library(tidyverse)
+library(ggplot2)
+library(scales)
+library(ggthemes)
+```
+
+
+# Loading Data
+
+I begin by loading the data and filtering income to be greater than 0. I also altered the ethnicity category to only include Hispanic/Not Hispanic.
+
+```{r}
+new_person_data_regressions <- read_csv("people.csv")%>%
+   filter(PINCP > 0)%>%
+  mutate(HISP_label = case_when(
+    HISP_label == "Not Spanish/Hispanic/Latino" ~ "Non Hispanic",
+    HISP_label ==                          "Dominican" ~ "Hispanic",
+    HISP_label ==                          "Guatemalan" ~ "Hispanic",
+    HISP_label ==                          "Mexican" ~ "Hispanic",
+    HISP_label ==                          "Salvadoran" ~ "Hispanic",
+    HISP_label ==                          "Ecuadorian" ~ "Hispanic",
+    HISP_label ==                          "Puerto Rican" ~ "Hispanic", 
+    HISP_label ==                          "All Other Spanish/Hispanic/Latino" ~ "Hispanic", 
+    HISP_label ==                          "Colombian" ~ "Hispanic",
+    HISP_label ==                          "Panamanian" ~ "Hispanic",
+    HISP_label ==                          "Cuban" ~ "Hispanic",
+    HISP_label ==                          "Honduran" ~ "Hispanic",
+    HISP_label ==                          "Peruvian" ~ "Hispanic",
+    HISP_label ==                          "Spaniard" ~ "Hispanic",
+    HISP_label ==                          "Venezuelan" ~ "Hispanic",
+    HISP_label ==                          "Uruguayan" ~ "Hispanic",
+    HISP_label ==                          "Nicaraguan" ~ "Hispanic", 
+    HISP_label ==                          "Costa Rican" ~ "Hispanic",
+    HISP_label ==                          "Other Central American" ~ "Hispanic",
+    HISP_label ==                          "Argentinean" ~ "Hispanic",
+    HISP_label ==                          "Chilean" ~ "Hispanic",
+    HISP_label ==                          "Paraguayan" ~ "Hispanic", 
+    HISP_label ==                          "Other South American" ~ "Hispanic")) %>%
+ 
+ mutate(MIG_label = case_when(
+    MIG_label == "Yes, same house (nonmovers)" ~ "1Yes, same house (nonmovers)",
+    MIG_label == "No, different house in US or Puerto Rico" ~ "No, different house in US or Puerto Rico",
+    MIG_label == "No, outside US and Puerto Rico" ~ "No, outside US and Puerto Rico"))
+  attach(new_person_data_regressions)
+```
+# Variables
+
+For this assignment, I will use 5 variables:  
+
+*Categorical*
+
+1. **HISP**: Altered to include only Hispanic and Non-Hispanic
+2. **MIG**: Mobility status (lived here 1 year ago)
+
+
+*Continuous*
+
+3. **PINCP**: Income
+4. **NP**: Number of persons in this household
+5. **RNTP**: Monthly rent 
+
+```{r}
+model <- lm(PINCP ~ NP + RNTP + MIG_label + HISP_label, 
+            data = new_person_data_regressions)
+
+summary(model)
+```
+
