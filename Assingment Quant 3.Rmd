@@ -291,7 +291,7 @@ difference = t.test(RNTP ~ HISP_label == "Hispanic",
 difference
 ```
 
-Interestingly, while Hispanics in this sample on average make more than non-Hispanics, Hispanics pay on average ~10% less rent than non-Hispanics. The t-test suggests that this is a statistically significant relationship.  
+Interestingly, while Non-Hispanics in this sample on average make more than Hispanics, Non-Hispanics pay on average ~10% less rent than Hispanics. The t-test suggests that this is a statistically significant relationship.  
 
 ### Plotting Ethnicity and Rent
 
@@ -331,7 +331,7 @@ difference = t.test(NP ~ HISP_label == "Hispanic",
 
 difference
 ```
-It appears that there is a statistically significant relationship between ethnicity and household size. In this case, non-Hispanics households are on average 1 person greater than their Hispanic counterparts. 
+It appears that there is a statistically significant relationship between ethnicity and household size. In this case, Hispanics households are on average 1 person greater than their non-Hispanic counterparts. 
 
 
 ### Plotting Ethnicity and Household Size
