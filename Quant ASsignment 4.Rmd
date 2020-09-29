@@ -78,3 +78,12 @@ model <- lm(PINCP ~ NP + RNTP + MIG_label + HISP_label,
 summary(model)
 ```
 
+# Interpreting the results
+
+I ran a regression to predict the relationship between income and my other variables. With an R squared of 1.074, it appears that for every additional person in the household, renters will make nearly $3,000 less. 
+
+It also predicts that for every additional dollar spent on rent, renters make $26 more for their income.
+
+Regarding migratory status, renters that move within the us earn ~2,000 less than those that stay in their homes. Renters that move outside of the U.S. earn ~6,700 less than those that stay in their homes. Here we see a realtionship between higher income and not moving. 
+
+Finally, it appears that non-hispanic renters will earn $2,845 more than Hispanics? It appeared as though the mean salary of Hispanic renters was higher than that of non-hispanic renters, so I need to review this finding. 

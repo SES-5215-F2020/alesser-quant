@@ -260,7 +260,7 @@ ggplot(new_person_data, aes(x = HISP_label, y = PINCP)) +
   geom_violin() +
   theme_bw() +
   scale_x_discrete(name = "Ethnicity",
-                   labels = c("Hispanic", "Non-Hispanic")) +
+                   labels = c("Non-Hispanic", "Hispanic")) +
    scale_y_continuous(name = "Income", 
                      breaks = seq(0, 600000, by = 50000),
                      labels = paste("$", 
@@ -300,7 +300,7 @@ ggplot(new_person_data, aes(x = HISP_label, y = RNTP)) +
   geom_violin() +
   theme_bw() +
   scale_x_discrete(name = "Ethnicity",
-                   labels = c("Hispanic", "Non-Hispanic")) +
+                   labels = c("Non-Hispanic", "Hispanic")) +
    scale_y_continuous(name = "Rent", 
                      breaks = seq(0, 4000, by = 500),
                      labels = paste("$", 
@@ -341,7 +341,7 @@ ggplot(new_person_data, aes(x = HISP_label, y = NP)) +
   geom_violin() +
   theme_bw() +
   scale_x_discrete(name = "Ethnicity",
-                   labels = c("Hispanic", "Non-Hispanic")) +
+                   labels = c("Non-Hispanic", "Hispanic")) +
    scale_y_continuous(name = "Household Size", 
                      breaks = seq(1, 12, by = 1),
                      labels = paste(
