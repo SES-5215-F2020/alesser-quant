@@ -1,8 +1,14 @@
 ---
 title: "Quant Assignment 4"
 author: "Aron Lesser"
-date: "9/24/2020"
-output: html_document
+date: "9/30/2020"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: lumen
+    highlight: tango
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
@@ -19,7 +25,7 @@ library(ggthemes)
 
 # Loading Data
 
-I begin by loading the data and filtering income to be greater than 0. I also altered the ethnicity category to only include Hispanic/Not Hispanic.
+I begin by loading the data and filtering income to be greater than 0. I also altered the ethnicity category to only include Hispanic/Not Hispanic. I also altered the Migratory Status options to make "did not move" as the base for the analysis. 
 
 ```{r}
 new_person_data_regressions <- read_csv("people.csv")%>%
@@ -71,6 +77,12 @@ For this assignment, I will use 5 variables:
 4. **NP**: Number of persons in this household
 5. **RNTP**: Monthly rent 
 
+
+# Regression
+
+I estimate a regression model to predict the value of income based on the other variables. 
+
+
 ```{r}
 model <- lm(PINCP ~ NP + RNTP + MIG_label + HISP_label, 
             data = new_person_data_regressions)
@@ -80,10 +92,13 @@ summary(model)
 
 # Interpreting the results
 
-I ran a regression to predict the relationship between income and my other variables. With an R squared of 1.074, it appears that for every additional person in the household, renters will make nearly $3,000 less. 
+With an R squared of 1.074 the model does predict outcomes with some degree of significance, especially in the field of Urban Planning.
 
-It also predicts that for every additional dollar spent on rent, renters make $26 more for their income.
+The model predicts that for for every additional person in the household, renters would make make nearly $3,000 less. This relationship has a very low p value, so we understand the relationship between the variables to have a statistical significance with more than 95% confidence.  
 
-Regarding migratory status, renters that move within the us earn ~2,000 less than those that stay in their homes. Renters that move outside of the U.S. earn ~6,700 less than those that stay in their homes. Here we see a realtionship between higher income and not moving. 
+The model also suggests that for every additional dollar spent on rent, renters earn ~$26 more for their income. This relationship has a very low p value, so we can say this is the case with well more than 95% confidence.  
 
-Finally, it appears that non-hispanic renters will earn $2,845 more than Hispanics? It appeared as though the mean salary of Hispanic renters was higher than that of non-hispanic renters, so I need to review this finding. 
+Regarding migratory status, renters that move within the United States are predicted to earn ~2,000 less than those that stay in their homes with above a 95% confidence (the p value is 0.00161). Renters that move outside of the U.S. would earn ~6,700 less than those that stay in their homes, though the P value is higher than U.S. movers, though still below the .05 that we expect for a 95% confidence. Here we see a relationship between higher income and not moving overall.  
+
+Finally, it appears that Non-hispanic renters will earn $2,845 more than Hispanics renters. This is consistent with the difference in means that I found earlier (in the previous assignment). The p value of 0.00380 suggests that there is above a 95% confidence that the relationship between the variables is meaningful.  
+
