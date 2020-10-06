@@ -1,0 +1,160 @@
+---
+title: "Quant Assignment 5"
+author: "Aron Lesser"
+date: "10/2/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(jtools)
+library(interactions)
+library(knitr)
+```
+
+Loading Data
+```{r}
+ppl_data <- read_csv("people.csv")%>%
+   filter(PINCP > 0)%>%
+  mutate(HISP_label = case_when(
+    HISP_label == "Not Spanish/Hispanic/Latino" ~ "Non Hispanic",
+    HISP_label ==                          "Dominican" ~ "Hispanic",
+    HISP_label ==                          "Guatemalan" ~ "Hispanic",
+    HISP_label ==                          "Mexican" ~ "Hispanic",
+    HISP_label ==                          "Salvadoran" ~ "Hispanic",
+    HISP_label ==                          "Ecuadorian" ~ "Hispanic",
+    HISP_label ==                          "Puerto Rican" ~ "Hispanic", 
+    HISP_label ==                          "All Other Spanish/Hispanic/Latino" ~ "Hispanic", 
+    HISP_label ==                          "Colombian" ~ "Hispanic",
+    HISP_label ==                          "Panamanian" ~ "Hispanic",
+    HISP_label ==                          "Cuban" ~ "Hispanic",
+    HISP_label ==                          "Honduran" ~ "Hispanic",
+    HISP_label ==                          "Peruvian" ~ "Hispanic",
+    HISP_label ==                          "Spaniard" ~ "Hispanic",
+    HISP_label ==                          "Venezuelan" ~ "Hispanic",
+    HISP_label ==                          "Uruguayan" ~ "Hispanic",
+    HISP_label ==                          "Nicaraguan" ~ "Hispanic", 
+    HISP_label ==                          "Costa Rican" ~ "Hispanic",
+    HISP_label ==                          "Other Central American" ~ "Hispanic",
+    HISP_label ==                          "Argentinean" ~ "Hispanic",
+    HISP_label ==                          "Chilean" ~ "Hispanic",
+    HISP_label ==                          "Paraguayan" ~ "Hispanic", 
+    HISP_label ==                          "Other South American" ~ "Hispanic")) %>%
+ 
+ mutate(MIG_label = case_when(
+    MIG_label == "Yes, same house (nonmovers)" ~ "1Yes, same house (nonmovers)",
+    MIG_label == "No, different house in US or Puerto Rico" ~ "No, different house in US or Puerto Rico",
+    MIG_label == "No, outside US and Puerto Rico" ~ "No, outside US and Puerto Rico"))
+  attach(ppl_data)
+```
+
+
+Linear regression model
+
+```{r}
+model1 <- lm(PINCP ~ NP + RNTP + MIG_label + HISP_label, 
+            data = ppl_data)
+
+summary(model1)
+```
+
+Log transform income regression
+
+```{r}
+model2 <- lm(log(PINCP) ~ NP + RNTP + MIG_label + HISP_label, 
+            data = ppl_data)
+
+summary(model2)
+```
+The r squared worsens, from .107 to .089
+
+
+Interactions
+
+
+```{r}
+model3 <- lm(PINCP ~ NP:HISP_label + RNTP:HISP_label + MIG_label:HISP_label + HISP_label + RNTP:HISP_label, 
+            data = ppl_data)
+
+summary(model3)
+```
+
+Visualizing model fit
+
+```{r}
+ModelFit <- tibble(model = c(1, 2, 3),
+                   R_square = c(summary(model1)$adj.r.squared,
+                                summary(model2)$adj.r.squared,
+                                summary(model3)$adj.r.squared))
+
+ggplot(ModelFit, aes(x = model, y = R_square)) +
+  geom_line() +
+  scale_x_continuous(name = "",
+                   breaks = breaks <- seq(1, 3, by = 1),
+                   labels = paste("Model", breaks)) +
+  scale_y_continuous(name = "Adjusted R-squared value") +
+  theme_bw()
+```
+
+Creating a table
+
+```{r}
+coeff_names <- c(
+                 "Non-hispanic\n(compared to hispanic)" = "HISP_labelNon Hispanic",
+                 "Moved within U.S \n(compared to did not move)" = 
+                   "MIG_labelNo, different house in US or Puerto Rico",
+                 "Moved internatinoally \n(compared to did not move)" = 
+                   "MIG_labelNo, outside US and Puerto Rico",
+                 "Number of people in household" = 
+                   "NP",
+                 "Rent" =
+                   "RNTP",
+                 "Interaction:\nrent and hispanic (compared to non-hispanic)" = 
+                    "HISP_labelHispanic:RNTP",
+                 "Interaction:\nhousehold size and Hispanic (compared to non-hispanic)" = 
+                    "NP:HISP_labelHispanic",
+                 "Interaction:\nNon-Hispanic and moved within U.S. (compared to did not move)" = 
+                    "HISP_labelNon Hispanic:MIG_labelNo, different house in US or Puerto Rico",
+                 "Interaction:\nNon-Hispanic and moved internationally (compared to did not move)" = 
+                    "HISP_labelNon Hispanic:MIG_labelNo, outside US and Puerto Rico",
+                  "Interaction:\nHispanic and moved within U.S. (compared to did not move)" = 
+                    "HISP_labelHispanic:MIG_labelNo, different house in US or Puerto Rico",
+                 "Interaction:\nHispanic and moved internationally (compared to did not move)" = 
+                    "HISP_labelHispanic:MIG_labelNo, outside US and Puerto Rico")
+
+
+
+export_summs(model1, model3, 
+             error_format = "(p = {p.value})",
+             error_pos = "same",
+             model.names = c("Initial model", "Preferred model"),
+             coefs = coeff_names)
+```
+
+Plotting relationship between income and rent for hispanics and non-hispanics
+
+```{r}
+options(scipen = 999)
+
+interact_plot(model3, pred = RNTP, modx = HISP_label, interval = TRUE) +
+  scale_x_continuous(name = "Rent",
+                     limits = c(0, 3000),
+                     breaks = breaks <- seq(0, 3000, by = 500),
+                      labels = paste("$", 
+                                    prettyNum(breaks, big.mark = ","),
+                                    sep = ""))+
+  scale_y_continuous(name = "Income",
+                     limits = c(0, 100000),
+                     breaks = breaks <- seq(0, 100000, by = 10000),
+                      labels = paste("$", 
+                                    prettyNum(breaks, big.mark = ","),
+                                    sep = ""))+
+  scale_color_discrete(name = "") +
+  scale_linetype_discrete(name = "") +
+  scale_fill_discrete(name = "") 
+```
+
