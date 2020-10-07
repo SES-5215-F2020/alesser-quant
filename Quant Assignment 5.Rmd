@@ -2,21 +2,27 @@
 title: "Quant Assignment 5"
 author: "Aron Lesser"
 date: "10/2/2020"
-output: html_document
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: lumen
+    highlight: tango
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r include=FALSE}
 library(tidyverse)
 library(jtools)
 library(interactions)
 library(knitr)
 ```
 
-Loading Data
+# Loading and Mutating My Data
 ```{r}
 ppl_data <- read_csv("people.csv")%>%
    filter(PINCP > 0)%>%
@@ -53,7 +59,9 @@ ppl_data <- read_csv("people.csv")%>%
 ```
 
 
-Linear regression model
+# 1 Linear regression model
+
+This is my original linear regression in which I treat income as the dependent variable. 
 
 ```{r}
 model1 <- lm(PINCP ~ NP + RNTP + MIG_label + HISP_label, 
@@ -62,7 +70,9 @@ model1 <- lm(PINCP ~ NP + RNTP + MIG_label + HISP_label,
 summary(model1)
 ```
 
-Log transform income regression
+# 2 Log transform Income Regression
+
+Here, I log transform income. However, it appears to be a worse model fit, since the R Squared value decreased. 
 
 ```{r}
 model2 <- lm(log(PINCP) ~ NP + RNTP + MIG_label + HISP_label, 
@@ -73,7 +83,9 @@ summary(model2)
 The r squared worsens, from .107 to .089
 
 
-Interactions
+# 3 Regression - Interactions of all independent variables with ethnicity
+
+Interestingly, this model was the best fit, albeit only marginally. 
 
 
 ```{r}
@@ -83,7 +95,9 @@ model3 <- lm(PINCP ~ NP:HISP_label + RNTP:HISP_label + MIG_label:HISP_label + HI
 summary(model3)
 ```
 
-Visualizing model fit
+# Visualizing Model Fit
+
+It is evident that the first and my preferred model have nearly the same R Squared value. 
 
 ```{r}
 ModelFit <- tibble(model = c(1, 2, 3),
@@ -100,7 +114,7 @@ ggplot(ModelFit, aes(x = model, y = R_square)) +
   theme_bw()
 ```
 
-Creating a table
+# Creating a table with my original and preferred model
 
 ```{r}
 coeff_names <- c(
@@ -135,7 +149,9 @@ export_summs(model1, model3,
              coefs = coeff_names)
 ```
 
-Plotting relationship between income and rent for hispanics and non-hispanics
+# Plotting relationship between income and rent for hispanics and non-hispanics
+
+I noticed a key finding when I plotted income and rent with and ethnicity interaction below. It appears that after the $28,000 income marker, Hispanic renters are likely to have lower salaries than non-hispanic renters paying the same amount in rent. 
 
 ```{r}
 options(scipen = 999)
@@ -157,4 +173,31 @@ interact_plot(model3, pred = RNTP, modx = HISP_label, interval = TRUE) +
   scale_linetype_discrete(name = "") +
   scale_fill_discrete(name = "") 
 ```
+
+# Plottingthe relationship between income and number of people in household with an interacion of ethnicity
+
+In this plot, I realize that 84 rows were removed and that salaries are much lower than above. I wonder why this happened and I may have to amend my code for more appropriate results
+
+```{r, echo = FALSE}
+
+options(scipen = 999)
+
+interact_plot(model3, pred = NP, modx = HISP_label, interval = TRUE) +
+  scale_x_continuous(name = "Household size",
+                     limits = c(1, 12),
+                     breaks = breaks <- seq(1, 12, by = 1),
+                      labels = paste(
+                                    prettyNum(breaks, big.mark = ","),
+                                    sep = ""))+
+  scale_y_continuous(name = "Income",
+                     limits = c(0, 100000),
+                     breaks = breaks <- seq(0, 100000, by = 10000),
+                      labels = paste("$", 
+                                    prettyNum(breaks, big.mark = ","),
+                                    sep = ""))+
+  scale_color_discrete(name = "") +
+  scale_linetype_discrete(name = "") +
+  scale_fill_discrete(name = "") 
+```
+
 
